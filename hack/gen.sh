@@ -7,12 +7,40 @@ set -e
 
 rm -rf pkg/client
 
-gen_groups_path=./vendor/k8s.io/code-generator/generate-groups.sh
+KAPPCTRL_PKG="github.com/vmware-tanzu/carvel-kapp-controller"
 
-chmod +x $gen_groups_path
+echo "generating clients"
+# Generate clientset and apis code with K8s codegen tools.
+$GOPATH//bin/client-gen \
+  --clientset-name versioned \
+  --input-base "" \
+  --input "${KAPPCTRL_PKG}/pkg/apis/packages/v1alpha1,${KAPPCTRL_PKG}/pkg/apis/kappctrl/v1alpha1" \
+  --output-package "${KAPPCTRL_PKG}/pkg/client/clientset" \
+  --go-header-file ./hack/gen-boilerplate.txt
 
-$gen_groups_path \
-	all github.com/vmware-tanzu/carvel-kapp-controller/pkg/client github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis "kappctrl:v1alpha1 packages:v1alpha1"\
-	--go-header-file ./hack/gen-boilerplate.txt
+echo "generating deepcopy"
+$GOPATH/bin/deepcopy-gen \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/packages/v1alpha1" \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/packages" \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/kappctrl/v1alpha1" \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/kappctrl" \
+  -O zz_generated.deepcopy \
+  --go-header-file hack/gen-boilerplate.txt
 
-chmod -x $gen_groups_path
+echo "generating conversion"
+$GOPATH/bin/conversion-gen  \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/packages/v1alpha1,${KAPPCTRL_PKG}/pkg/apis/packages" \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/kappctrl/v1alpha1,${KAPPCTRL_PKG}/pkg/apis/kappctrl/" \
+  -O zz_generated.conversion \
+  --go-header-file hack/gen-boilerplate.txt
+
+echo "generating openapi"
+$GOPATH/bin/openapi-gen  \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/packages/v1alpha1" \
+  --input-dirs "${KAPPCTRL_PKG}/pkg/apis/kappctrl/v1alpha1" \
+  --input-dirs "k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/runtime,k8s.io/apimachinery/pkg/util/intstr" \
+  --input-dirs "k8s.io/api/core/v1" \
+  --output-package "${KAPPCTRL_PKG}/pkg/client/openapi" \
+  -O zz_generated.openapi \
+  --go-header-file hack/gen-boilerplate.txt
+

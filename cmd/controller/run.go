@@ -13,18 +13,17 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/vmware-tanzu/carvel-kapp-controller/cmd/controller/handlers"
 	kcv1alpha1 "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/kappctrl/v1alpha1"
-	pkgv1alpha1 "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/packages/v1alpha1"
-	serverconf "github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver/config"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/apis/packages"
 	kcclient "github.com/vmware-tanzu/carvel-kapp-controller/pkg/client/clientset/versioned"
-	genericapiserver "k8s.io/apiserver/pkg/server"
-	"k8s.io/client-go/informers"
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/config/scheme"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/vmware-tanzu/carvel-kapp-controller/pkg/apiserver"
 )
 
 const (
@@ -49,7 +48,7 @@ func Run(opts Options, runLog logr.Logger) {
 		restConfig.Timeout = opts.APIRequestTimeout
 	}
 
-	mgr, err := manager.New(restConfig, manager.Options{Namespace: opts.Namespace})
+	mgr, err := manager.New(restConfig, manager.Options{Namespace: opts.Namespace, Scheme: scheme.Scheme})
 	if err != nil {
 		runLog.Error(err, "unable to set up overall controller manager")
 		os.Exit(1)
@@ -71,36 +70,18 @@ func Run(opts Options, runLog logr.Logger) {
 		os.Exit(1)
 	}
 
-	// _, err = aggregatorclient.NewForConfig(restConfig)
-	// if err != nil {
-	// 	runLog.Error(err, "building aggregator client")
-	// 	os.Exit(1)
-	// }
-
 	appFactory := AppFactory{
 		coreClient: coreClient,
 		appClient:  kcClient,
 	}
 
-	// create apiserver
-	serverConfig, err := serverconf.NewConfig()
+	server, err := apiserver.New(restConfig)
 	if err != nil {
-		runLog.Error(err, "building server config")
+		runLog.Error(err, "creating api server")
 		os.Exit(1)
 	}
 
-	informerFactory := informers.NewSharedInformerFactory(coreClient, 12*time.Hour)
-
-	server, err := serverConfig.Complete(informerFactory).New("kapp-controller-apiserver", genericapiserver.NewEmptyDelegate())
-	if err != nil {
-		runLog.Error(err, "building apiserver")
-		os.Exit(1)
-	}
-
-	// start everything
-	stopCh := make(<-chan struct{})
-	go informerFactory.Start(stopCh)
-	go server.PrepareRun().Run(stopCh)
+	server.Run()
 
 	{ // add controller for apps
 		ctrlAppOpts := controller.Options{
@@ -149,7 +130,7 @@ func Run(opts Options, runLog logr.Logger) {
 			os.Exit(1)
 		}
 
-		err = installedPkgCtrl.Watch(&source.Kind{Type: &pkgv1alpha1.Pkg{}}, handlers.NewInstalledPkgVersionHandler(kcClient, runLog.WithName("handler")))
+		err = installedPkgCtrl.Watch(&source.Kind{Type: &packages.Pkg{}}, handlers.NewInstalledPkgVersionHandler(kcClient, runLog.WithName("handler")))
 		if err != nil {
 			runLog.Error(err, "unable to watch *kcv1alpha1.Pkg for InstalledPkg")
 			os.Exit(1)
@@ -196,10 +177,11 @@ func Run(opts Options, runLog logr.Logger) {
 		}()
 	}
 
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		runLog.Error(err, "unable to run manager")
-		os.Exit(1)
-	}
+	// if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+	// 	runLog.Error(err, "unable to run manager")
+	// 	os.Exit(1)
+	// }
+	time.Sleep(1000 * time.Minute)
 
 	runLog.Info("Exiting")
 	os.Exit(0)

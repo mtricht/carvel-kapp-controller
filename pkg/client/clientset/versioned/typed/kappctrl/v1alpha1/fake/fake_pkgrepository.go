@@ -19,9 +19,9 @@ type FakePkgRepositories struct {
 	Fake *FakeKappctrlV1alpha1
 }
 
-var pkgrepositoriesResource = schema.GroupVersionResource{Group: "kappctrl", Version: "v1alpha1", Resource: "pkgrepositories"}
+var pkgrepositoriesResource = schema.GroupVersionResource{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Resource: "pkgrepositories"}
 
-var pkgrepositoriesKind = schema.GroupVersionKind{Group: "kappctrl", Version: "v1alpha1", Kind: "PkgRepository"}
+var pkgrepositoriesKind = schema.GroupVersionKind{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Kind: "PkgRepository"}
 
 // Get takes name of the pkgRepository, and returns the corresponding pkgRepository object, and an error if there is any.
 func (c *FakePkgRepositories) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PkgRepository, err error) {

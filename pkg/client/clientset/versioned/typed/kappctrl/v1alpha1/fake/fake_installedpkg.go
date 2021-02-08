@@ -20,9 +20,9 @@ type FakeInstalledPkgs struct {
 	ns   string
 }
 
-var installedpkgsResource = schema.GroupVersionResource{Group: "kappctrl", Version: "v1alpha1", Resource: "installedpkgs"}
+var installedpkgsResource = schema.GroupVersionResource{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Resource: "installedpkgs"}
 
-var installedpkgsKind = schema.GroupVersionKind{Group: "kappctrl", Version: "v1alpha1", Kind: "InstalledPkg"}
+var installedpkgsKind = schema.GroupVersionKind{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Kind: "InstalledPkg"}
 
 // Get takes name of the installedPkg, and returns the corresponding installedPkg object, and an error if there is any.
 func (c *FakeInstalledPkgs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.InstalledPkg, err error) {

@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const GroupName = "packages.k14s.io"
+
 var SchemeGroupVersion = schema.GroupVersion{Group: "packages.k14s.io", Version: "v1alpha1"}
 
 var (

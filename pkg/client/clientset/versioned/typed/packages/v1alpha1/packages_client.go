@@ -13,7 +13,7 @@ type PackagesV1alpha1Interface interface {
 	PkgsGetter
 }
 
-// PackagesV1alpha1Client is used to interact with features provided by the packages group.
+// PackagesV1alpha1Client is used to interact with features provided by the packages.kapp-controller.k14s.io group.
 type PackagesV1alpha1Client struct {
 	restClient rest.Interface
 }

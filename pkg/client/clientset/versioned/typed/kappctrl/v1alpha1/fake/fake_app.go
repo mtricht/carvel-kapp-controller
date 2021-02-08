@@ -20,9 +20,9 @@ type FakeApps struct {
 	ns   string
 }
 
-var appsResource = schema.GroupVersionResource{Group: "kappctrl", Version: "v1alpha1", Resource: "apps"}
+var appsResource = schema.GroupVersionResource{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Resource: "apps"}
 
-var appsKind = schema.GroupVersionKind{Group: "kappctrl", Version: "v1alpha1", Kind: "App"}
+var appsKind = schema.GroupVersionKind{Group: "kappctrl.kapp-controller.k14s.io", Version: "v1alpha1", Kind: "App"}
 
 // Get takes name of the app, and returns the corresponding app object, and an error if there is any.
 func (c *FakeApps) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.App, err error) {
